@@ -423,6 +423,8 @@ public class GamePanel extends JPanel implements KeyListener {
         if (p1Move != null) {
             player1MoveLabel.setText(Constants.getMoveSymbol(p1Move));
             System.out.println("Set P1 symbol: " + Constants.getMoveSymbol(p1Move));
+            // Play move sound
+            EnhancedSoundManager.playMoveSound(p1Move);
         } else {
             player1MoveLabel.setText("❌");
             System.out.println("P1 move was null, showing X");
@@ -431,33 +433,63 @@ public class GamePanel extends JPanel implements KeyListener {
         if (p2Move != null) {
             player2MoveLabel.setText(Constants.getMoveSymbol(p2Move));
             System.out.println("Set P2 symbol: " + Constants.getMoveSymbol(p2Move));
+            // Play move sound for computer/player 2
+            EnhancedSoundManager.playMoveSound(p2Move);
         } else {
             player2MoveLabel.setText("❌");
             System.out.println("P2 move was null, showing X");
         }
         
-        // Show result
+        // Show result with enhanced messaging
         if (result != null) {
-            resultLabel.setText(result.getName() + "!");
+            String resultMessage = getDetailedResultMessage(result);
+            resultLabel.setText(resultMessage);
             resultLabel.setForeground(Constants.getResultColor(result));
             
             // Play appropriate sound
-            SoundManager.playSound(result.getName().toLowerCase());
-            System.out.println("Result displayed: " + result.getName());
+            EnhancedSoundManager.playResultSound(result, false);
+            
+            // Show animated result
+            AnimationManager.showResultAnimation(this, resultMessage, result, false);
+            
+            System.out.println("Result displayed: " + resultMessage);
         } else {
             resultLabel.setText("No Result");
             System.out.println("Result was null!");
         }
         
-        // Update instruction
+        // Update instruction with simple player labels
         String moveText = "";
         if (p1Move != null && p2Move != null) {
-            moveText = p1Move.getName() + " vs " + p2Move.getName();
+            String player1Name = gameLogic.getGameMode() == GameMode.PVC ? "You" : "Player 1";
+            String player2Name = gameLogic.getGameMode() == GameMode.PVC ? "Computer" : "Player 2";
+            moveText = String.format("%s's %s vs %s's %s", 
+                player1Name, p1Move.getName(), 
+                player2Name, p2Move.getName());
         } else {
             moveText = "Missing moves!";
         }
         instructionLabel.setText(moveText);
         System.out.println("Move text: " + moveText);
+    }
+    
+    /**
+     * Get detailed result message with player names
+     */
+    private String getDetailedResultMessage(GameResult result) {
+        String player1Name = PlayerManager.getPlayer1Name();
+        String player2Name = PlayerManager.getPlayer2Name();
+        
+        switch (result) {
+            case WIN:
+                return player1Name + " Wins!";
+            case LOSE:
+                return player2Name + " Wins!";
+            case DRAW:
+                return "It's a Draw!";
+            default:
+                return "Unknown Result";
+        }
     }
     
     /**
@@ -473,7 +505,7 @@ public class GamePanel extends JPanel implements KeyListener {
         // Save game to history
         saveGameToHistory(gameDuration);
         
-        String winner = gameLogic.getGameWinner();
+        String winner = getDetailedGameWinner();
         countdownLabel.setText(Constants.GAME_OVER);
         countdownLabel.setFont(Constants.GAME_OVER_FONT);
         countdownLabel.setForeground(Constants.PRIMARY_TEXT);
@@ -481,18 +513,29 @@ public class GamePanel extends JPanel implements KeyListener {
         resultLabel.setText(winner);
         resultLabel.setFont(Constants.FINAL_RESULT_FONT);
         
-        if (winner.contains("Win")) {
-            resultLabel.setForeground(Constants.WIN_COLOR);
-            SoundManager.playSound(Constants.SOUND_WIN);
-        } else if (winner.contains("Tie")) {
+        // Determine if player 1 won for animation
+        boolean player1Won = gameLogic.getPlayer1Score() > gameLogic.getPlayer2Score();
+        boolean tie = gameLogic.getPlayer1Score() == gameLogic.getPlayer2Score();
+        
+        GameResult finalResult;
+        if (tie) {
+            finalResult = GameResult.DRAW;
             resultLabel.setForeground(Constants.DRAW_COLOR);
-            SoundManager.playSound(Constants.SOUND_DRAW);
+        } else if (player1Won) {
+            finalResult = GameResult.WIN;
+            resultLabel.setForeground(Constants.WIN_COLOR);
+            // Show confetti for player 1 victory
+            AnimationManager.showConfetti(this);
         } else {
+            finalResult = GameResult.LOSE;
             resultLabel.setForeground(Constants.LOSE_COLOR);
-            SoundManager.playSound(Constants.SOUND_LOSE);
         }
         
-        instructionLabel.setText(Constants.GAME_FINISHED + gameLogic.getScoreText());
+        // Play game end sounds and show animation
+        EnhancedSoundManager.playResultSound(finalResult, true);
+        AnimationManager.showResultAnimation(this, winner, finalResult, true);
+        
+        instructionLabel.setText("🎮 " + Constants.GAME_FINISHED + gameLogic.getScoreText() + " 🎮");
         nextRoundButton.setVisible(false);
         
         // Show game statistics if available
@@ -517,11 +560,42 @@ public class GamePanel extends JPanel implements KeyListener {
             int rounds = gameLogic.getTotalRounds();
             int player1Score = gameLogic.getPlayer1Score();
             int player2Score = gameLogic.getPlayer2Score();
-            String winner = gameLogic.getGameWinner();
+            String winner = getDetailedGameWinner();
             
+            // Save to game history
             GameHistory.addGameRecord(mode, rounds, player1Score, player2Score, winner, durationMs);
+            
+            // Update player statistics
+            String player1Name = PlayerManager.getPlayer1Name();
+            boolean player1Won = player1Score > player2Score;
+            PlayerManager.updatePlayerStats(player1Name, mode, player1Won, rounds);
+            
+            if (mode == GameMode.PVP) {
+                String player2Name = PlayerManager.getPlayer2Name();
+                boolean player2Won = player2Score > player1Score;
+                PlayerManager.updatePlayerStats(player2Name, mode, player2Won, rounds);
+            }
+            
         } catch (Exception e) {
             System.err.println("Error saving game to history: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get detailed game winner message with player names
+     */
+    private String getDetailedGameWinner() {
+        String player1Name = PlayerManager.getPlayer1Name();
+        String player2Name = PlayerManager.getPlayer2Name();
+        int player1Score = gameLogic.getPlayer1Score();
+        int player2Score = gameLogic.getPlayer2Score();
+        
+        if (player1Score > player2Score) {
+            return player1Name + " Wins!";
+        } else if (player2Score > player1Score) {
+            return player2Name + " Wins!";
+        } else {
+            return "It's a Tie!";
         }
     }
     
@@ -609,7 +683,7 @@ public class GamePanel extends JPanel implements KeyListener {
                 System.out.println("Player 1 move: " + move);
                 if (move != null) {
                     gameLogic.setPlayer1Move(move);
-                    SoundManager.playSound(Constants.SOUND_SELECT);
+                    // Removed move selection sound
                     
                     // Visual feedback
                     player1MoveLabel.setText("✓");
@@ -627,7 +701,7 @@ public class GamePanel extends JPanel implements KeyListener {
                 System.out.println("Player 1 move: " + move);
                 if (move != null) {
                     gameLogic.setPlayer1Move(move);
-                    SoundManager.playSound(Constants.SOUND_SELECT);
+                    // Removed move selection sound
                     
                     // Visual feedback
                     player1MoveLabel.setText("✓");
@@ -638,7 +712,7 @@ public class GamePanel extends JPanel implements KeyListener {
                 System.out.println("Player 2 move: " + move);
                 if (move != null) {
                     gameLogic.setPlayer2Move(move);
-                    SoundManager.playSound(Constants.SOUND_SELECT);
+                    // Removed move selection sound
                     
                     // Visual feedback
                     player2MoveLabel.setText("✓");

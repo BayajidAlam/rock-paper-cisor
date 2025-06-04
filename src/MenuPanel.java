@@ -76,10 +76,10 @@ public class MenuPanel extends JPanel {
     }
     
     /**
-     * Create game mode selection panel
+     * Create game mode selection panel with improved styling
      */
     private JPanel createGameModePanel() {
-        JPanel panel = new JPanel(new FlowLayout());
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         panel.setOpaque(false);
         
         JLabel label = new JLabel("Game Mode:");
@@ -87,7 +87,23 @@ public class MenuPanel extends JPanel {
         
         gameModeCombo = new JComboBox<>(GameMode.values());
         gameModeCombo.setFont(new Font("Arial", Font.PLAIN, 16));
-        gameModeCombo.setPreferredSize(new Dimension(200, 30));
+        gameModeCombo.setPreferredSize(new Dimension(220, 40)); // Larger size
+        gameModeCombo.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.GRAY, 1),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        
+        // Custom renderer for better display
+        gameModeCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value,
+                    int index, boolean isSelected, boolean cellHasFocus) {
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                setFont(new Font("Arial", Font.PLAIN, 16));
+                setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+                return c;
+            }
+        });
         
         panel.add(label);
         panel.add(Box.createRigidArea(new Dimension(20, 0)));
@@ -97,10 +113,10 @@ public class MenuPanel extends JPanel {
     }
     
     /**
-     * Create rounds selection panel
+     * Create rounds selection panel with improved styling
      */
     private JPanel createRoundsPanel() {
-        JPanel panel = new JPanel(new FlowLayout());
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         panel.setOpaque(false);
         
         JLabel label = new JLabel("Number of Rounds:");
@@ -110,7 +126,24 @@ public class MenuPanel extends JPanel {
         roundsCombo = new JComboBox<>(roundOptions);
         roundsCombo.setSelectedIndex(1); // Default to 3 rounds
         roundsCombo.setFont(new Font("Arial", Font.PLAIN, 16));
-        roundsCombo.setPreferredSize(new Dimension(100, 30));
+        roundsCombo.setPreferredSize(new Dimension(120, 40)); // Larger size
+        roundsCombo.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.GRAY, 1),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        
+        // Custom renderer for rounds combo
+        roundsCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value,
+                    int index, boolean isSelected, boolean cellHasFocus) {
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                setFont(new Font("Arial", Font.PLAIN, 16));
+                setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+                setHorizontalAlignment(JLabel.CENTER);
+                return c;
+            }
+        });
         
         panel.add(label);
         panel.add(Box.createRigidArea(new Dimension(20, 0)));

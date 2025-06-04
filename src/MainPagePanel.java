@@ -1,7 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 /**
  * Main Page Panel - Landing page with all main options
@@ -15,11 +13,13 @@ public class MainPagePanel extends JPanel {
     private JButton viewHistoryButton;
     private JToggleButton themeToggle;
     private JLabel statsLabel;
+    private Timer discoTimer; // For title animation
     
     public MainPagePanel(RockPaperScissorsApp parent) {
         this.parent = parent;
         initializeUI();
         updateStats();
+        startTitleAnimation();
     }
     
     /**
@@ -64,7 +64,7 @@ public class MainPagePanel extends JPanel {
     }
     
     /**
-     * Create title panel
+     * Create title panel (without animations)
      */
     private JPanel createTitlePanel() {
         JPanel panel = new JPanel();
@@ -75,7 +75,7 @@ public class MainPagePanel extends JPanel {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 48));
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        JLabel subtitleLabel = new JLabel("Ultimate Gaming Experience");
+        JLabel subtitleLabel = new JLabel("✨ Ultimate Gaming Experience ✨");
         subtitleLabel.setFont(new Font("Arial", Font.ITALIC, 18));
         subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         
@@ -84,6 +84,14 @@ public class MainPagePanel extends JPanel {
         panel.add(subtitleLabel);
         
         return panel;
+    }
+    
+    /**
+     * Start title animation (disabled)
+     */
+    private void startTitleAnimation() {
+        // Animation disabled for better UX
+        // EnhancedSoundManager.playSound("text_animation");
     }
     
     /**
@@ -103,7 +111,7 @@ public class MainPagePanel extends JPanel {
     }
     
     /**
-     * Create game setup panel
+     * Create game setup panel with improved styling
      */
     private JPanel createGameSetupPanel() {
         JPanel panel = new JPanel();
@@ -113,43 +121,79 @@ public class MainPagePanel extends JPanel {
             BorderFactory.createEtchedBorder(),
             "Game Setup",
             0, 0,
-            new Font("Arial", Font.BOLD, 16)
+            new Font("Arial", Font.BOLD, 18)
         ));
         
-        // Game mode selection
-        JPanel modePanel = new JPanel(new FlowLayout());
+        // Game mode selection with improved styling
+        JPanel modePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
         modePanel.setOpaque(false);
         
         JLabel modeLabel = new JLabel("Game Mode:");
-        modeLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        modeLabel.setFont(new Font("Arial", Font.BOLD, 16));
         
         gameModeCombo = new JComboBox<>(GameMode.values());
-        gameModeCombo.setFont(new Font("Arial", Font.PLAIN, 14));
-        gameModeCombo.setPreferredSize(new Dimension(200, 30));
+        gameModeCombo.setFont(new Font("Arial", Font.PLAIN, 16));
+        gameModeCombo.setPreferredSize(new Dimension(220, 40)); // Increased size
+        gameModeCombo.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.GRAY, 1),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        
+        // Custom renderer for better text display
+        gameModeCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value,
+                    int index, boolean isSelected, boolean cellHasFocus) {
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                setFont(new Font("Arial", Font.PLAIN, 16));
+                setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+                return c;
+            }
+        });
         
         modePanel.add(modeLabel);
         modePanel.add(Box.createRigidArea(new Dimension(20, 0)));
         modePanel.add(gameModeCombo);
         
-        // Rounds selection
-        JPanel roundsPanel = new JPanel(new FlowLayout());
+        // Rounds selection with improved styling
+        JPanel roundsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
         roundsPanel.setOpaque(false);
         
         JLabel roundsLabel = new JLabel("Number of Rounds:");
-        roundsLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        roundsLabel.setFont(new Font("Arial", Font.BOLD, 16));
         
         Integer[] roundOptions = {1, 3, 5, 7, 9};
         roundsCombo = new JComboBox<>(roundOptions);
         roundsCombo.setSelectedIndex(1); // Default to 3 rounds
-        roundsCombo.setFont(new Font("Arial", Font.PLAIN, 14));
-        roundsCombo.setPreferredSize(new Dimension(100, 30));
+        roundsCombo.setFont(new Font("Arial", Font.PLAIN, 16));
+        roundsCombo.setPreferredSize(new Dimension(120, 40)); // Increased size
+        roundsCombo.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.GRAY, 1),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        
+        // Custom renderer for rounds combo
+        roundsCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value,
+                    int index, boolean isSelected, boolean cellHasFocus) {
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                setFont(new Font("Arial", Font.PLAIN, 16));
+                setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+                setHorizontalAlignment(JLabel.CENTER);
+                return c;
+            }
+        });
         
         roundsPanel.add(roundsLabel);
         roundsPanel.add(Box.createRigidArea(new Dimension(20, 0)));
         roundsPanel.add(roundsCombo);
         
+        panel.add(Box.createRigidArea(new Dimension(0, 10)));
         panel.add(modePanel);
+        panel.add(Box.createRigidArea(new Dimension(0, 15)));
         panel.add(roundsPanel);
+        panel.add(Box.createRigidArea(new Dimension(0, 10)));
         
         return panel;
     }
@@ -188,7 +232,7 @@ public class MainPagePanel extends JPanel {
         addHoverEffect(startGameButton, new Color(34, 139, 34), new Color(50, 205, 50));
         addHoverEffect(viewHistoryButton, new Color(70, 130, 180), new Color(100, 149, 237));
         
-        // Add action listeners
+        // Add action listeners (removed sound effects)
         startGameButton.addActionListener(e -> startGame());
         viewHistoryButton.addActionListener(e -> parent.showHistory());
         
@@ -232,11 +276,16 @@ public class MainPagePanel extends JPanel {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 if (button.isEnabled()) {
                     button.setBackground(hoverColor);
+                    // Removed hover sound
                 }
             }
             
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 button.setBackground(normalColor);
+            }
+            
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                // Removed click sound
             }
         });
     }
@@ -248,18 +297,29 @@ public class MainPagePanel extends JPanel {
         GameMode selectedMode = (GameMode) gameModeCombo.getSelectedItem();
         Integer selectedRounds = (Integer) roundsCombo.getSelectedItem();
         
-        // Play sound effect if available
-        SoundManager.playSound("start");
-        
+        // Removed sound effect
         // Start the game
         parent.showGame(selectedMode, selectedRounds);
+    }
+    
+    /**
+     * Start title animation
+     */
+    
+    /**
+     * Stop animations when leaving panel
+     */
+    public void stopAnimations() {
+        if (discoTimer != null && discoTimer.isRunning()) {
+            discoTimer.stop();
+        }
     }
     
     /**
      * Toggle between light and dark theme
      */
     private void toggleTheme() {
-        ThemeManager themeManager = parent.getThemeManager();
+        EnhancedThemeManager themeManager = parent.getThemeManager();
         
         if (themeToggle.isSelected()) {
             themeManager.setDarkTheme();

@@ -3,7 +3,7 @@ import java.awt.*;
 
 /**
  * Rock Paper Scissors Game Application
- * Main class with enhanced UI, themes, and game history
+ * Main class that manages the application windows and navigation
  */
 public class RockPaperScissorsApp extends JFrame {
     private CardLayout cardLayout;
@@ -12,14 +12,18 @@ public class RockPaperScissorsApp extends JFrame {
     private MenuPanel menuPanel;
     private GamePanel gamePanel;
     private HistoryPanel historyPanel;
-    private ThemeManager themeManager;
+    private EnhancedThemeManager themeManager;
     
     public RockPaperScissorsApp() {
-        themeManager = new ThemeManager();
+        themeManager = new EnhancedThemeManager();
         initializeWindow();
         createMenuBar();
         initializePanels();
         showMainPage();
+        
+        // Initialize enhanced systems
+        EnhancedSoundManager.initialize();
+        PlayerManager.initialize();
     }
     
     /**
@@ -42,21 +46,39 @@ public class RockPaperScissorsApp extends JFrame {
         
         // Game Menu
         JMenu gameMenu = new JMenu("Game");
-        JMenuItem newGame = new JMenuItem("New Game");
-        JMenuItem viewHistory = new JMenuItem("View History");
-        JMenuItem clearHistory = new JMenuItem("Clear History");
-        JMenuItem exit = new JMenuItem("Exit");
         
+        JMenuItem newGame = new JMenuItem("New Game");
         newGame.addActionListener(e -> showGameMenu());
+        
+        JMenuItem viewHistory = new JMenuItem("View History");
         viewHistory.addActionListener(e -> showHistory());
+        
+        JMenuItem leaderboard = new JMenuItem("Leaderboard");
+        leaderboard.addActionListener(e -> PlayerManager.showLeaderboard(this));
+        
+        JMenuItem clearHistory = new JMenuItem("Clear History");
         clearHistory.addActionListener(e -> {
-            GameHistory.clearHistory();
-            JOptionPane.showMessageDialog(this, "Game history cleared!");
+            int confirm = JOptionPane.showConfirmDialog(this,
+                "Clear all game history and player data?",
+                "Confirm Clear",
+                JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                GameHistory.clearHistory();
+                PlayerManager.clearAllPlayers();
+                JOptionPane.showMessageDialog(this, "All data cleared!");
+                // Removed export sound
+            }
         });
-        exit.addActionListener(e -> System.exit(0));
+        
+        JMenuItem exit = new JMenuItem("Exit");
+        exit.addActionListener(e -> {
+            EnhancedSoundManager.cleanup();
+            System.exit(0);
+        });
         
         gameMenu.add(newGame);
         gameMenu.add(viewHistory);
+        gameMenu.add(leaderboard);
         gameMenu.addSeparator();
         gameMenu.add(clearHistory);
         gameMenu.addSeparator();
@@ -64,13 +86,14 @@ public class RockPaperScissorsApp extends JFrame {
         
         // Theme Menu
         JMenu themeMenu = new JMenu("Theme");
-        JMenuItem lightTheme = new JMenuItem("Light Theme");
-        JMenuItem darkTheme = new JMenuItem("Dark Theme");
         
+        JMenuItem lightTheme = new JMenuItem("Light Theme");
         lightTheme.addActionListener(e -> {
             themeManager.setLightTheme();
             updateTheme();
         });
+        
+        JMenuItem darkTheme = new JMenuItem("Dark Theme");
         darkTheme.addActionListener(e -> {
             themeManager.setDarkTheme();
             updateTheme();
@@ -81,10 +104,11 @@ public class RockPaperScissorsApp extends JFrame {
         
         // Help Menu
         JMenu helpMenu = new JMenu("Help");
-        JMenuItem controls = new JMenuItem("Controls");
-        JMenuItem about = new JMenuItem("About");
         
+        JMenuItem controls = new JMenuItem("Controls");
         controls.addActionListener(e -> showControls());
+        
+        JMenuItem about = new JMenuItem("About");
         about.addActionListener(e -> showAbout());
         
         helpMenu.add(controls);
@@ -124,6 +148,9 @@ public class RockPaperScissorsApp extends JFrame {
      */
     public void showMainPage() {
         cardLayout.show(mainPanel, "MAIN");
+        if (mainPagePanel != null) {
+            mainPagePanel.refresh();
+        }
     }
     
     /**
@@ -134,9 +161,10 @@ public class RockPaperScissorsApp extends JFrame {
     }
     
     /**
-     * Show the game screen
+     * Show the game screen (removed player name input)
      */
     public void showGame(GameMode mode, int rounds) {
+        // Start game directly without player name dialog
         gamePanel.startNewGame(mode, rounds);
         cardLayout.show(mainPanel, "GAME");
     }
@@ -164,7 +192,7 @@ public class RockPaperScissorsApp extends JFrame {
     /**
      * Get current theme manager
      */
-    public ThemeManager getThemeManager() {
+    public EnhancedThemeManager getThemeManager() {
         return themeManager;
     }
     
@@ -172,54 +200,70 @@ public class RockPaperScissorsApp extends JFrame {
      * Show controls dialog
      */
     private void showControls() {
-        String controls = "Game Controls:\n\n" +
+        String controls = "🎮 Game Controls:\n\n" +
                 "Player vs Computer:\n" +
-                "• A = Rock\n" +
-                "• S = Paper\n" +
-                "• D = Scissors\n\n" +
+                "• A = Rock 🪨\n" +
+                "• S = Paper 📄\n" +
+                "• D = Scissors ✂️\n\n" +
                 "Player vs Player:\n" +
                 "• Player 1: A (Rock), S (Paper), D (Scissors)\n" +
                 "• Player 2: J (Rock), K (Paper), L (Scissors)\n\n" +
-                "Rules:\n" +
+                "🎯 Rules:\n" +
                 "• Press your key once during the 3-second countdown\n" +
                 "• Multiple key presses in PvP mode = cheating!\n" +
                 "• Rock beats Scissors\n" +
                 "• Paper beats Rock\n" +
-                "• Scissors beats Paper";
+                "• Scissors beats Paper\n\n" +
+                "🏆 Features:\n" +
+                "• Smart AI that learns your patterns\n" +
+                "• Game history with CSV export\n" +
+                "• Player leaderboard\n" +
+                "• Light/Dark themes";
         
-        JOptionPane.showMessageDialog(this, controls, "Game Controls", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this, controls, "🎮 Game Controls", JOptionPane.INFORMATION_MESSAGE);
     }
     
     /**
      * Show about dialog
      */
     private void showAbout() {
-        String about = "Rock Paper Scissors Game\n\n" +
-                "Version 2.0\n" +
-                "Features:\n" +
+        String about = "🎮 Rock Paper Scissors Game\n\n" +
+                "🌟 Version 3.0 - Professional Edition\n\n" +
+                "✨ Features:\n" +
                 "• Player vs Player and Player vs Computer modes\n" +
                 "• Smart AI that learns from your moves\n" +
-                "• Anti-cheating system\n" +
-                "• Game history with CSV export\n" +
-                "• Light and Dark themes\n" +
-                "• Sound effects\n" +
-                "• Multi-round games\n\n" +
-                "Created for Java Programming Course\n" +
-                "Final Project 2024-2025";
+                "• Anti-cheating system with detection\n" +
+                "• Comprehensive game history with CSV export\n" +
+                "• Player profiles and leaderboard system\n" +
+                "• Professional Light and Dark themes\n" +
+                "• Enhanced sound effects for every action\n" +
+                "• Smooth animations and visual effects\n" +
+                "• Multi-round games with statistics\n\n" +
+                "🎯 Created for Java Programming Course\n" +
+                "📅 Final Project 2024-2025\n\n" +
+                "🎵 Enhanced with professional UI/UX design\n" +
+                "🏆 Complete with leaderboard and player management";
         
-        JOptionPane.showMessageDialog(this, about, "About", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this, about, "🎮 About", JOptionPane.INFORMATION_MESSAGE);
     }
     
     /**
      * Main method - entry point of the application
      */
     public static void main(String[] args) {
-        // Initialize game history
+        // Initialize game systems
         GameHistory.initialize();
+        PlayerManager.initialize();
+        EnhancedSoundManager.initialize();
         
         // Create and show the application
         SwingUtilities.invokeLater(() -> {
-            new RockPaperScissorsApp().setVisible(true);
+            try {
+                new RockPaperScissorsApp().setVisible(true);
+                // Removed startup sound
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         });
     }
 }
